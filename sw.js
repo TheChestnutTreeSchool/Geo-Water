@@ -1,5 +1,5 @@
 /* Service Worker: macht die App offline verfügbar */
-const CACHE = 'geo-water-v1';
+const CACHE = 'geo-water-v2';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'xlsx.js', 'manifest.webmanifest', 'icon.svg'];
 
 self.addEventListener('install', (e) => {

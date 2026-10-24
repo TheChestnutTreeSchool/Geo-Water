@@ -13,13 +13,14 @@
 <body>
   <header class="topbar">
     <h1>Geo-Water</h1>
-    <span id="offline-badge" class="badge" hidden>offline</span>
+    <button id="sync-badge" class="badge" type="button" hidden></button>
   </header>
 
   <nav class="tabs">
     <button data-tab="erfassen" class="active">Erfassen</button>
     <button data-tab="messungen">Messungen <span id="count-badge" class="count"></span></button>
     <button data-tab="fassungen">Fassungen</button>
+    <button data-tab="einstellungen" class="narrow" aria-label="Einstellungen">⚙</button>
   </nav>
 
   <main>
@@ -73,18 +74,26 @@
             <input type="radio" name="volumen" id="v20" value="20"><label for="v20">20 l</label>
           </div>
 
-          <label>Zeitaufwand Probenahme</label>
+          <div class="row between">
+            <label for="f-anzahl" class="inline">Anzahl Messungen</label>
+            <div class="stepper">
+              <button type="button" id="anz-minus" class="btn small" aria-label="weniger">−</button>
+              <input id="f-anzahl" inputmode="numeric" value="3" aria-label="Anzahl Messungen">
+              <button type="button" id="anz-plus" class="btn small" aria-label="mehr">+</button>
+            </div>
+          </div>
+
           <div class="stopwatch">
+            <div id="sw-info" class="sw-info"></div>
             <div id="sw-display" class="sw-display">0.0 s</div>
-            <div class="row">
-              <button type="button" id="sw-start" class="btn primary big">Start</button>
-              <button type="button" id="sw-reset" class="btn big">Reset</button>
-            </div>
+            <button type="button" id="sw-start" class="btn primary big block">Start</button>
+            <ol id="sw-zeiten" class="zeiten"></ol>
             <div class="row manual">
-              <label for="f-zeit" class="inline">Sekunden (manuell)</label>
-              <input id="f-zeit" name="zeit" inputmode="decimal" autocomplete="off" placeholder="0.0">
+              <input id="f-zeit-manuell" inputmode="decimal" autocomplete="off" placeholder="Sekunden manuell">
+              <button type="button" id="btn-zeit-add" class="btn">Hinzufügen</button>
             </div>
-            <div id="schuettung" class="hint"></div>
+            <div id="sw-mittel" class="mittel"></div>
+            <button type="button" id="sw-reset" class="btn small link">Alle Zeiten löschen</button>
           </div>
         </div>
 
@@ -101,11 +110,12 @@
     <!-- ============ MESSUNGEN ============ -->
     <section id="tab-messungen" class="tab">
       <div class="card">
+        <div id="mess-sync" class="hint first"></div>
         <div class="row wrap">
           <button id="btn-export-xlsx" class="btn primary">Excel exportieren</button>
           <button id="btn-export-csv" class="btn">CSV exportieren</button>
         </div>
-        <p class="hint">Die Messungen werden auf diesem Gerät gespeichert. Bitte regelmässig exportieren.</p>
+        <p class="hint">Export der Messungen, die auf diesem Gerät gespeichert sind.</p>
       </div>
       <ul id="liste-messungen" class="list"></ul>
       <button id="btn-alle-loeschen" class="btn danger block">Alle Messungen löschen</button>
@@ -114,7 +124,7 @@
     <!-- ============ FASSUNGEN ============ -->
     <section id="tab-fassungen" class="tab">
       <div class="card">
-        <h2>Fassung hinzufügen</h2>
+        <h2>Fassung hinzufügen / bearbeiten</h2>
         <form id="form-fassung" novalidate>
           <div class="row">
             <div class="grow">
@@ -127,7 +137,7 @@
             </div>
           </div>
           <div class="row">
-            <div class="grow">
+            <div class="grow2">
               <label for="s-typ">Art</label>
               <select id="s-typ">
                 <option>Quelle</option>
@@ -135,10 +145,12 @@
               </select>
             </div>
             <div class="grow">
-              <label for="s-projekt">Projekt</label>
-              <input id="s-projekt" list="dl-projekte">
+              <label for="s-anzahl">Anz. Messungen</label>
+              <input id="s-anzahl" inputmode="numeric" placeholder="Standard">
             </div>
           </div>
+          <label for="s-projekt">Projekt</label>
+          <input id="s-projekt" list="dl-projekte">
           <div class="row">
             <div class="grow">
               <label for="s-lat">Breite / N</label>
@@ -160,7 +172,7 @@
 
       <div class="card">
         <h2>Import / Export</h2>
-        <p class="hint">CSV-Datei mit Spalten <code>Kürzel; Name; Art; Projekt; Breite; Länge</code>
+        <p class="hint first">CSV-Datei mit Spalten <code>Kürzel; Name; Art; Projekt; Breite; Länge; Anzahl Messungen</code>
           (oder <code>E; N</code> in LV95). Gleiche Kürzel werden aktualisiert.</p>
         <div class="row wrap">
           <label class="btn file">CSV importieren<input type="file" id="file-fassungen" accept=".csv,.txt,text/csv" hidden></label>
@@ -168,13 +180,37 @@
         </div>
       </div>
 
+      <ul id="liste-fassungen" class="list"></ul>
+    </section>
+
+    <!-- ============ EINSTELLUNGEN ============ -->
+    <section id="tab-einstellungen" class="tab">
       <div class="card">
-        <h2>Einstellungen</h2>
-        <label for="set-radius">Radius für automatische Zuordnung (m)</label>
-        <input id="set-radius" type="number" inputmode="numeric" min="10" step="10">
+        <h2>Geteilte Datenbank (Google-Tabelle)</h2>
+        <p class="hint first">Alle Geräte speichern ihre Messungen und Fassungen in derselben Tabelle.
+          Ohne Netz wird gesammelt und später automatisch übertragen.</p>
+        <label for="set-db-url">Web-App-URL</label>
+        <input id="set-db-url" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+        <label for="set-db-key">Zugangsschlüssel</label>
+        <input id="set-db-key" autocomplete="off">
+        <div class="row wrap gap-top">
+          <button id="btn-db-save" class="btn primary">Speichern &amp; verbinden</button>
+          <button id="btn-sync" class="btn">Jetzt synchronisieren</button>
+        </div>
+        <div id="db-status" class="hint"></div>
+        <div class="row wrap gap-top">
+          <button id="btn-db-link" class="btn">Link für weitere Geräte</button>
+          <a id="db-sheet-link" class="btn" target="_blank" rel="noopener" hidden>Tabelle öffnen</a>
+        </div>
       </div>
 
-      <ul id="liste-fassungen" class="list"></ul>
+      <div class="card">
+        <h2>Erfassung</h2>
+        <label for="set-anzahl">Standard-Anzahl Messungen pro Standort</label>
+        <input id="set-anzahl" inputmode="numeric">
+        <label for="set-radius">Radius für automatische Standort-Zuordnung (m)</label>
+        <input id="set-radius" inputmode="numeric">
+      </div>
     </section>
   </main>
 

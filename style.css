@@ -41,7 +41,11 @@ body {
   background: var(--primary); color: var(--primary-text);
 }
 .topbar h1 { font-size: 1.2rem; margin: 0; }
-.badge { background: rgba(0,0,0,.25); border-radius: 99px; padding: 2px 10px; font-size: .8rem; }
+.badge {
+  background: rgba(0,0,0,.25); color: inherit; border: 0; border-radius: 99px;
+  padding: 4px 12px; font: inherit; font-size: .8rem; cursor: pointer;
+}
+.badge.warn { background: #f0b429; color: #3a2a00; }
 
 .tabs {
   position: sticky; top: 0; z-index: 5;
@@ -52,6 +56,7 @@ body {
   font: inherit; font-weight: 600; border-bottom: 3px solid transparent;
 }
 .tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tabs button.narrow { flex: 0 0 52px; font-size: 1.2rem; }
 .count { font-weight: 400; }
 
 main { max-width: 640px; margin: 0 auto; padding: 12px 16px 32px; }
@@ -82,6 +87,8 @@ input.invalid, select.invalid { border-color: var(--danger); }
 
 .row { display: flex; gap: 8px; align-items: center; }
 .row.wrap { flex-wrap: wrap; }
+.row.between { justify-content: space-between; margin-top: 12px; }
+.gap-top { margin-top: 10px; }
 .row > input { flex: 1; min-width: 0; }
 .row .grow { flex: 1; min-width: 0; }
 .row .grow2 { flex: 2; min-width: 0; }
@@ -99,6 +106,13 @@ input.invalid, select.invalid { border-color: var(--danger); }
 .btn.block { width: 100%; margin-top: 4px; }
 .btn.running { background: var(--danger); border-color: var(--danger); color: #fff; }
 .btn.file { margin: 0; color: var(--text); font-size: 1rem; }
+.btn.link { border: 0; background: none; color: var(--muted); text-decoration: underline; font-weight: 400; }
+.btn:disabled { opacity: .45; cursor: default; }
+a.btn { text-decoration: none; }
+
+.stepper { display: flex; align-items: center; gap: 4px; }
+.stepper .btn { width: 44px; min-height: 44px; padding: 0; font-size: 1.3rem; }
+.stepper input { width: 56px; text-align: center; font-weight: 700; }
 
 .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
@@ -112,6 +126,8 @@ input.invalid, select.invalid { border-color: var(--danger); }
 .seg input:focus-visible + label { outline: 2px solid var(--primary); outline-offset: -3px; }
 
 .hint { font-size: .85rem; color: var(--muted); margin: 6px 0 0; }
+.hint.first { margin: 0 0 10px; }
+.hint:empty { display: none; }
 .hint.ok { color: var(--ok); }
 .hint.warn { color: var(--warn); }
 .error { color: var(--danger); font-weight: 600; margin: 8px 0; }
@@ -124,13 +140,26 @@ input.invalid, select.invalid { border-color: var(--danger); }
 }
 .chip.active { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
 
-.stopwatch { text-align: center; }
+.stopwatch { text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sw-info { font-weight: 600; color: var(--muted); }
+.sw-info.done { color: var(--ok); }
+.sw-info.warn { color: var(--warn); }
 .sw-display {
   font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums;
-  margin: 4px 0 10px;
+  margin: 2px 0 10px;
 }
-.stopwatch .manual { margin-top: 10px; text-align: left; }
-.stopwatch .manual input { max-width: 140px; }
+.stopwatch .manual { margin-top: 10px; }
+.zeiten { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.zeiten:empty { display: none; }
+.zeiten li {
+  display: flex; align-items: center; gap: 4px; background: var(--bg); border: 1px solid var(--line);
+  border-radius: 99px; padding: 4px 4px 4px 12px; font-variant-numeric: tabular-nums;
+}
+.zeiten li span { color: var(--muted); }
+.zeiten .x { border: 0; background: none; color: var(--danger); font-size: 1rem; padding: 2px 8px; cursor: pointer; }
+.mittel { margin-top: 10px; font-weight: 600; }
+.mittel:empty { display: none; }
+.mittel small { display: block; font-weight: 400; color: var(--muted); }
 
 .list { list-style: none; margin: 0 0 12px; padding: 0; }
 .list li {
@@ -139,6 +168,8 @@ input.invalid, select.invalid { border-color: var(--danger); }
 }
 .list .main { flex: 1; min-width: 0; }
 .list .title { font-weight: 700; }
+.list .sync { font-weight: 400; font-size: .8rem; color: var(--muted); margin-left: 4px; }
+.list .sync.pending { color: var(--warn); }
 .list .meta { font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
 .list .del { border: 0; background: none; color: var(--danger); font-size: 1.2rem; padding: 4px 6px; cursor: pointer; }
 .list .empty { justify-content: center; color: var(--muted); }
