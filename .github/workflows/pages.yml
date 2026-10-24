@@ -27,8 +27,7 @@ jobs:
       - name: Spracherkennung und deutsches Sprachmodell laden
         run: bash tools/sprachmodell-laden.sh
 
-      - name: Sprachbefehle mit synthetischer Stimme prüfen
-        continue-on-error: true
+      - name: Sprachmodell prüfen (Befehlswörter, Probe mit synthetischer Stimme)
         run: |
           sudo apt-get install -y -qq espeak-ng >/dev/null
           pip install -q vosk

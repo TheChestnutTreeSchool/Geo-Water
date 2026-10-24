@@ -30,14 +30,36 @@ MDL="$(find "$TMP/m" -path '*/am/final.mdl' | head -1)"
 [ -n "$MDL" ] || { echo "FEHLER: kein Vosk-Modell im Zip gefunden"; exit 1; }
 DIR="$(dirname "$(dirname "$MDL")")"
 
-# Die Sprachbefehle müssen im Wortschatz des Modells vorkommen
-WORDS="$DIR/graph/words.txt"
-[ -f "$WORDS" ] || { echo "FEHLER: $WORDS fehlt (Modell unterstützt keine Wortliste)"; exit 1; }
-for w in start starten stopp stop stoppen; do
-  if grep -qP "^$w\s" "$WORDS"; then echo "  Wort im Modell: $w"; fi
-done
-grep -qP "^start\s" "$WORDS" || { echo "FEHLER: «start» fehlt im Modell"; exit 1; }
-grep -qP "^(stopp|stop)\s" "$WORDS" || { echo "FEHLER: «stopp»/«stop» fehlt im Modell"; exit 1; }
+echo "  Modell-Dateien:"
+(cd "$DIR" && find . -type f | sort | sed 's/^/    /')
+
+# Die Sprachbefehle müssen im Wortschatz des Modells vorkommen.
+# Wortliste: graph/words.txt oder – bei kleinen Modellen – die Symboltabelle im Sprachgraphen (Gr.fst / HCLG.fst).
+python3 - "$DIR" <<'PY'
+import os, struct, sys
+d = sys.argv[1]
+words_txt = os.path.join(d, "graph", "words.txt")
+if os.path.exists(words_txt):
+    with open(words_txt, encoding="utf-8") as f:
+        vocab = {line.split()[0] for line in f if line.strip()}
+    has = lambda w: w in vocab
+    quelle = "graph/words.txt"
+else:
+    quelle = next((g for g in ("graph/Gr.fst", "graph/HCLG.fst") if os.path.exists(os.path.join(d, g))), None)
+    if not quelle:
+        sys.exit("FEHLER: weder graph/words.txt noch ein Sprachgraph gefunden")
+    data = open(os.path.join(d, quelle), "rb").read()
+    # OpenFst speichert Symbole als <int32 Länge><Text>
+    has = lambda w: struct.pack("<i", len(w.encode())) + w.encode() in data
+print(f"  Wortschatz aus {quelle}:")
+for w in ("start", "starten", "stopp", "stop", "stoppen"):
+    print(f"    {w}: {'ja' if has(w) else 'nein'}")
+ok = has("start") and (has("stopp") or has("stop"))
+if not ok and quelle == "graph/words.txt":
+    sys.exit("FEHLER: «start» oder «stopp»/«stop» fehlt im Modell")
+if not ok:
+    print("  Hinweis: Wörter im Graphen nicht gefunden – verbindliche Prüfung folgt mit tools/sprachtest.py")
+PY
 
 mkdir -p "$TMP/pack/model"
 cp -r "$DIR"/. "$TMP/pack/model/"
