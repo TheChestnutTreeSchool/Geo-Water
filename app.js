@@ -45,7 +45,7 @@
   }
   const prefs = Object.assign({
     projekt: '', mitarbeiter: '', typ: 'Quelle', volumen: '10',
-    radius: 100, anzahl: 3,
+    radius: 100, anzahl: 3, wach: true, ton: true, sprache: false,
     dbUrl: '', dbKey: '', sheetUrl: '', lastSync: 0
   }, load(KEY.prefs, {}));
 
@@ -423,14 +423,14 @@
   if (!Array.isArray(sw.zeiten)) sw.zeiten = [];
   const swDisplay = $('#sw-display');
   const swStart = $('#sw-start');
-  let swTimer = null, wakeLock = null;
+  let swTimer = null;
 
-  function swSave() { save(KEY.sw, { running: sw.running, start: sw.start, zeiten: sw.zeiten }); }
+  function swSave() { save(KEY.sw, sw); }
 
   function swRender() {
     const n = getAnzahl(), k = sw.zeiten.length;
     const info = $('#sw-info');
-    const s = sw.running ? (Date.now() - sw.start) / 1000 : k ? sw.zeiten[k - 1] : 0;
+    const s = sw.running ? Math.max(0, Date.now() - sw.start) / 1000 : k ? sw.zeiten[k - 1] : 0;
     swDisplay.textContent = fmtDauer(s);
 
     info.className = 'sw-info';
@@ -464,34 +464,52 @@
     }
   }
 
-  async function keepAwake(on) {
-    try {
-      if (on && 'wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
-      else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
-    } catch (e) { /* nicht unterstützt */ }
-  }
   function swTick(on) {
     clearInterval(swTimer);
     if (on) swTimer = setInterval(swRender, 100);
-    keepAwake(on);
+    updateWakeLock();
   }
 
-  swStart.addEventListener('click', () => {
+  // Messung beginnen (t = Zeitpunkt, beim Sprachbefehl der Wortbeginn).
+  // START während einer laufenden Messung (nur per Sprache) beginnt sie neu.
+  function swStartRun(t, perSprache) {
+    const n = getAnzahl();
     if (sw.running) {
-      const t = round((Date.now() - sw.start) / 1000, 1);
-      sw.running = false;
-      if (t > 0) sw.zeiten.push(t);
-      swTick(false);
-      if (navigator.vibrate) navigator.vibrate(80);
+      if (!perSprache) return false;
+      sw.start = t;
+      toast('Messung neu gestartet');
     } else {
-      if (sw.zeiten.length >= getAnzahl()) return;
+      if (sw.zeiten.length >= n) {
+        signal('fehler');
+        toast(`Alle ${n} Messungen sind bereits erfasst`);
+        return false;
+      }
       if (!sw.zeiten.length && !state.datumManuell) setNow();
-      sw.start = Date.now();
+      sw.start = t;
       sw.running = true;
       swTick(true);
     }
     swSave();
     swRender();
+    signal('start');
+    return true;
+  }
+
+  function swStopRun(t) {
+    if (!sw.running) return false;
+    const dauer = round((t - sw.start) / 1000, 1);
+    sw.running = false;
+    if (dauer > 0) sw.zeiten.push(dauer);
+    swTick(false);
+    swSave();
+    swRender();
+    signal('stop');
+    return true;
+  }
+
+  swStart.addEventListener('click', () => {
+    const t = Date.now();
+    if (sw.running) swStopRun(t); else swStartRun(t, false);
   });
 
   $('#sw-zeiten').addEventListener('click', (e) => {
@@ -502,12 +520,21 @@
     swRender();
   });
 
+  // Dauer von Hand: «23.4», «23,4» oder «1:05.3» (Minuten:Sekunden)
+  function parseDauer(s) {
+    const t = String(s || '').trim();
+    const m = /^(\d+):(\d{1,2}(?:[.,]\d*)?)$/.exec(t);
+    if (m) return Number(m[1]) * 60 + parseNum(m[2]);
+    return parseNum(t);
+  }
+
   function addManualTime() {
     const inp = $('#f-zeit-manuell');
-    const v = parseNum(inp.value);
+    const v = parseDauer(inp.value);
     if (!(v > 0)) { inp.classList.add('invalid'); return; }
     inp.classList.remove('invalid');
-    if (sw.zeiten.length >= getAnzahl()) return;
+    if (sw.running || sw.zeiten.length >= getAnzahl()) return;
+    if (!sw.zeiten.length && !state.datumManuell) setNow();
     sw.zeiten.push(round(v, 1));
     inp.value = '';
     swSave();
@@ -529,10 +556,166 @@
     swSave();
     swRender();
   }
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && sw.running) keepAwake(true);
-  });
   $('#seg-volumen').addEventListener('change', swRender);
+
+  // ---------- Rückmeldung: Ton, Vibration, Farbe ----------
+  let beepCtx = null;
+  function beepContext() {
+    try {
+      if (!beepCtx) beepCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (beepCtx.state === 'suspended') beepCtx.resume();
+    } catch (e) { beepCtx = null; }
+    return beepCtx;
+  }
+  document.addEventListener('pointerdown', beepContext, { once: true, capture: true });
+
+  function beep(freq, dauer, beginn) {
+    const c = beepContext();
+    if (!c) return;
+    const t = c.currentTime + (beginn || 0);
+    const o = c.createOscillator(), g = c.createGain();
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+    o.connect(g).connect(c.destination);
+    o.start(t);
+    o.stop(t + dauer + 0.02);
+  }
+
+  let flashTimer;
+  function signal(art) {
+    swDisplay.classList.remove('flash-start', 'flash-stop', 'flash-fehler');
+    swDisplay.classList.add('flash-' + art);
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => swDisplay.classList.remove('flash-' + art), 700);
+    if (!prefs.ton) return;
+    if (art === 'start') { beep(1046, 0.18); if (navigator.vibrate) navigator.vibrate(120); }
+    if (art === 'stop') { beep(784, 0.12); beep(784, 0.12, 0.18); if (navigator.vibrate) navigator.vibrate([80, 60, 80]); }
+    if (art === 'fehler') { beep(220, 0.35); if (navigator.vibrate) navigator.vibrate(400); }
+  }
+
+  // ---------- Bildschirm wach halten ----------
+  let wakeLock = null, wakePending = false;
+  async function updateWakeLock() {
+    const want = (prefs.wach || sw.running || Sprache.isActive()) && document.visibilityState === 'visible';
+    if (want && !wakeLock && !wakePending && 'wakeLock' in navigator) {
+      wakePending = true;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; renderWachStatus(); });
+      } catch (e) {
+        wakeLock = null;
+      } finally {
+        wakePending = false;
+      }
+    } else if (!want && wakeLock) {
+      try { await wakeLock.release(); } catch (e) { /* egal */ }
+      wakeLock = null;
+    }
+    renderWachStatus();
+  }
+  function renderWachStatus() {
+    const el = $('#wach-status');
+    if (!('wakeLock' in navigator)) {
+      el.textContent = 'Dieser Browser kann den Bildschirm nicht wach halten – bitte in den Android-Einstellungen die Bildschirm-Zeitlimit verlängern.';
+      el.className = 'hint warn';
+    } else {
+      el.textContent = wakeLock ? 'Bildschirm bleibt eingeschaltet ✓' : '';
+      el.className = 'hint ok';
+    }
+  }
+  document.addEventListener('visibilitychange', updateWakeLock);
+  // Manche Geräte verweigern die Sperre ohne vorherige Berührung
+  document.addEventListener('pointerdown', () => { if (!wakeLock) updateWakeLock(); }, true);
+
+  // ---------- Sprachsteuerung ----------
+  const btnSprache = $('#btn-sprache');
+  const sprStatus = $('#sprache-status');
+  const pegel = $('#pegel'), pegelBar = $('#pegel-bar');
+
+  function renderSprache(state, text) {
+    const on = Sprache.isActive();
+    btnSprache.classList.toggle('on', on && state === 'aktiv');
+    btnSprache.classList.toggle('busy', on && state !== 'aktiv');
+    btnSprache.setAttribute('aria-pressed', String(on));
+    btnSprache.textContent = on ? '🎤 Sprachsteuerung EIN' : '🎤 Sprachsteuerung AUS';
+    pegel.hidden = !(on && state === 'aktiv');
+    sprStatus.textContent = text || '';
+    sprStatus.className = 'hint' + (state === 'fehler' || state === 'tippen' ? ' warn' : state === 'aktiv' ? ' ok' : '');
+  }
+
+  // kurze Rückmeldung unter dem Sprach-Knopf, danach wieder «Hört zu …»
+  let sprTimer;
+  function sprMeldung(text, cls) {
+    sprStatus.textContent = text;
+    sprStatus.className = 'hint' + (cls ? ' ' + cls : '');
+    clearTimeout(sprTimer);
+    sprTimer = setTimeout(() => {
+      if (Sprache.isActive()) renderSprache('aktiv', 'Hört zu – sage «START» oder «STOP»');
+    }, 4000);
+  }
+
+  async function spracheEin() {
+    beepContext();
+    try {
+      await Sprache.start({
+        onCommand: (art, t) => {
+          if (art === 'start') {
+            if (swStartRun(t, true)) sprMeldung('«START» übernommen', 'ok');
+          } else if (swStopRun(t)) {
+            sprMeldung('«STOP» übernommen', 'ok');
+          } else {
+            sprMeldung('«STOP» gehört – es läuft keine Messung', 'warn');
+          }
+        },
+        onHint: (art) => sprMeldung(`«${art.toUpperCase()}» gehört …`, ''),
+        onIgnored: (art, grund) => sprMeldung(`«${art.toUpperCase()}» nicht übernommen (${grund}) – bitte einzeln sagen`, 'warn'),
+        onStatus: (state, text) => { renderSprache(state, text); updateWakeLock(); if (state === 'aktiv') renderModellStatus(); },
+        onLevel: (v) => { pegelBar.style.width = Math.round(v * 100) + '%'; }
+      });
+    } catch (e) {
+      prefs.sprache = false;
+      save(KEY.prefs, prefs);
+      if (!navigator.onLine) sprStatus.textContent += ' – das Sprachmodell muss einmalig mit Internet geladen werden.';
+    }
+    updateWakeLock();
+  }
+
+  btnSprache.addEventListener('click', () => {
+    if (Sprache.isActive()) {
+      Sprache.stop();
+      prefs.sprache = false;
+      renderSprache('aus', '');
+    } else {
+      prefs.sprache = true;
+      spracheEin();
+    }
+    save(KEY.prefs, prefs);
+    updateWakeLock();
+  });
+
+  async function renderModellStatus() {
+    const el = $('#modell-status');
+    const da = await Sprache.isDownloaded();
+    el.textContent = da ? 'Sprachmodell gespeichert – funktioniert offline ✓' : 'Sprachmodell noch nicht heruntergeladen.';
+    el.className = 'hint' + (da ? ' ok' : ' warn');
+    $('#btn-modell').hidden = da;
+  }
+  $('#btn-modell').addEventListener('click', async () => {
+    const btn = $('#btn-modell');
+    btn.disabled = true;
+    const el = $('#modell-status');
+    try {
+      await Sprache.download((state, text) => { el.textContent = text; el.className = 'hint'; });
+      toast('Sprachmodell bereit');
+    } catch (e) {
+      el.textContent = 'Download fehlgeschlagen: ' + ((e && e.message) || 'unbekannter Fehler');
+      el.className = 'hint warn';
+    }
+    btn.disabled = false;
+    renderModellStatus();
+  });
 
   // ---------- Speichern ----------
   form.addEventListener('submit', (e) => {
@@ -1100,6 +1283,10 @@
     $('#set-db-key').value = prefs.dbKey;
     $('#set-anzahl').value = prefs.anzahl;
     $('#set-radius').value = prefs.radius;
+    $('#set-wach').checked = prefs.wach;
+    $('#set-ton').checked = prefs.ton;
+    renderWachStatus();
+    renderModellStatus();
     const st = $('#db-status');
     st.textContent = prefs.dbUrl ? dbStatus.text || (prefs.lastSync ? `Zuletzt synchronisiert ${fmtDate(new Date(prefs.lastSync))}` : '') : '';
     st.className = 'hint' + (dbStatus.cls && prefs.dbUrl ? ' ' + dbStatus.cls : '');
@@ -1144,6 +1331,16 @@
     save(KEY.prefs, prefs);
     if (!selFassung.value && !sw.zeiten.length) setAnzahl(prefs.anzahl);
   });
+  $('#set-wach').addEventListener('change', (e) => {
+    prefs.wach = e.target.checked;
+    save(KEY.prefs, prefs);
+    updateWakeLock();
+  });
+  $('#set-ton').addEventListener('change', (e) => {
+    prefs.ton = e.target.checked;
+    save(KEY.prefs, prefs);
+    if (prefs.ton) signal('start');
+  });
   $('#set-radius').addEventListener('change', (e) => {
     const v = parseNum(e.target.value);
     prefs.radius = v >= 10 ? Math.round(v) : 100;
@@ -1169,6 +1366,9 @@
   updateCount();
   swRender();
   if (sw.running) swTick(true);
+  renderSprache('aus', '');
+  if (prefs.sprache) spracheEin();
+  updateWakeLock();
   updateSyncBadge();
   locate(false);
   sync({ silent: true });

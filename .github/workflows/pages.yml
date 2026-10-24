@@ -1,0 +1,57 @@
+# Veröffentlicht die App auf GitHub Pages – inklusive Offline-Spracherkennung und deutschem Sprachmodell.
+name: App veröffentlichen
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Spracherkennung und deutsches Sprachmodell laden
+        run: bash tools/sprachmodell-laden.sh
+
+      - name: Sprachbefehle mit synthetischer Stimme prüfen
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -qq espeak-ng >/dev/null
+          pip install -q vosk
+          mkdir -p /tmp/modell && tar -xzf vosk/model-de.tar.gz -C /tmp/modell
+          python3 tools/sprachtest.py /tmp/modell/model
+
+      - name: Website zusammenstellen
+        run: |
+          mkdir _site
+          cp index.html app.js sprache.js xlsx.js style.css sw.js manifest.webmanifest \
+             icon.svg icon-192.png icon-512.png icon-maskable-512.png beispiel-fassungen.csv _site/
+          cp -r vosk _site/vosk
+          ls -la _site _site/vosk
+
+      - uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

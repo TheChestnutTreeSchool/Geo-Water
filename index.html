@@ -84,12 +84,18 @@
           </div>
 
           <div class="stopwatch">
+            <div class="voice">
+              <button type="button" id="btn-sprache" class="btn voice-btn" aria-pressed="false">🎤 Sprachsteuerung AUS</button>
+              <div class="pegel" id="pegel" hidden><div id="pegel-bar"></div></div>
+            </div>
+            <div id="sprache-status" class="hint"></div>
             <div id="sw-info" class="sw-info"></div>
             <div id="sw-display" class="sw-display">0.0 s</div>
             <button type="button" id="sw-start" class="btn primary big block">Start</button>
             <ol id="sw-zeiten" class="zeiten"></ol>
+            <label for="f-zeit-manuell" class="manual-label">Zeit von Hand eintragen (z. B. externe Stoppuhr)</label>
             <div class="row manual">
-              <input id="f-zeit-manuell" inputmode="decimal" autocomplete="off" placeholder="Sekunden manuell">
+              <input id="f-zeit-manuell" inputmode="decimal" autocomplete="off" placeholder="Sek. oder m:ss">
               <button type="button" id="btn-zeit-add" class="btn">Hinzufügen</button>
             </div>
             <div id="sw-mittel" class="mittel"></div>
@@ -205,6 +211,17 @@
       </div>
 
       <div class="card">
+        <h2>Sprachsteuerung &amp; Bildschirm</h2>
+        <label class="check"><input type="checkbox" id="set-wach"> Bildschirm nie ausschalten, solange die App offen ist</label>
+        <div id="wach-status" class="hint"></div>
+        <label class="check"><input type="checkbox" id="set-ton"> Signalton und Vibration bei Start / Stopp</label>
+        <p class="hint">Die Sprachsteuerung erkennt «START» und «STOP» direkt auf dem Gerät – ohne Internet.
+          Das Sprachmodell (ca. 50 MB) wird einmalig heruntergeladen, am besten im WLAN.</p>
+        <div id="modell-status" class="hint"></div>
+        <button id="btn-modell" class="btn gap-top">Sprachmodell herunterladen</button>
+      </div>
+
+      <div class="card">
         <h2>Erfassung</h2>
         <label for="set-anzahl">Standard-Anzahl Messungen pro Standort</label>
         <input id="set-anzahl" inputmode="numeric">
@@ -217,6 +234,7 @@
   <div id="toast" class="toast" hidden></div>
 
   <script src="xlsx.js"></script>
+  <script src="sprache.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

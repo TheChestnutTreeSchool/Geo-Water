@@ -27,6 +27,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -141,14 +142,27 @@ a.btn { text-decoration: none; }
 .chip.active { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
 
 .stopwatch { text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.sw-info { font-weight: 600; color: var(--muted); }
+.sw-info { font-weight: 600; color: var(--muted); margin-top: 10px; }
+.voice { display: flex; align-items: center; gap: 10px; }
+.voice-btn { flex: 1; }
+.voice-btn.on { background: var(--ok); border-color: var(--ok); color: #fff; }
+.voice-btn.busy { opacity: .7; }
+.pegel { width: 70px; height: 14px; border-radius: 7px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+#pegel-bar { height: 100%; width: 0; background: var(--ok); transition: width .08s linear; }
+#sprache-status { text-align: left; }
+.sw-display.flash-start { color: var(--ok); }
+.sw-display.flash-stop { color: var(--danger); }
+.sw-display.flash-fehler { color: var(--warn); }
+.manual-label { text-align: left; margin-top: 14px; }
+label.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; color: var(--text); font-size: .95rem; margin: 12px 0 0; }
+label.check input { width: 22px; height: 22px; min-height: 0; margin: 0; flex: none; accent-color: var(--primary); }
 .sw-info.done { color: var(--ok); }
 .sw-info.warn { color: var(--warn); }
 .sw-display {
   font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums;
   margin: 2px 0 10px;
 }
-.stopwatch .manual { margin-top: 10px; }
+.stopwatch .manual { margin-top: 0; }
 .zeiten { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .zeiten:empty { display: none; }
 .zeiten li {
