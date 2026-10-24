@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b6e99">
+  <title>Geo-Water</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Geo-Water</h1>
+    <span id="offline-badge" class="badge" hidden>offline</span>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="erfassen" class="active">Erfassen</button>
+    <button data-tab="messungen">Messungen <span id="count-badge" class="count"></span></button>
+    <button data-tab="fassungen">Fassungen</button>
+  </nav>
+
+  <main>
+    <!-- ============ ERFASSEN ============ -->
+    <section id="tab-erfassen" class="tab active">
+      <form id="form-messung" novalidate>
+        <div class="card">
+          <label>Fassungsart</label>
+          <div class="seg" id="seg-typ">
+            <input type="radio" name="typ" id="typ-q" value="Quelle" checked>
+            <label for="typ-q">Quelle</label>
+            <input type="radio" name="typ" id="typ-g" value="Grundwasserfassung">
+            <label for="typ-g">Grundwasserfassung</label>
+          </div>
+
+          <label for="f-projekt">Projektname</label>
+          <input id="f-projekt" name="projekt" list="dl-projekte" autocomplete="off" required>
+          <datalist id="dl-projekte"></datalist>
+
+          <label for="f-mitarbeiter">Probe genommen von</label>
+          <input id="f-mitarbeiter" name="mitarbeiter" list="dl-mitarbeiter" autocomplete="off" required>
+          <datalist id="dl-mitarbeiter"></datalist>
+
+          <label for="f-datum">Probe genommen am</label>
+          <div class="row">
+            <input id="f-datum" name="datum" type="datetime-local" required>
+            <button type="button" id="btn-jetzt" class="btn small">Jetzt</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <label>Probestandort</label>
+            <button type="button" id="btn-gps" class="btn small">📍 GPS</button>
+          </div>
+          <div id="gps-status" class="hint">GPS wird ermittelt …</div>
+          <div id="gps-kandidaten" class="chips"></div>
+
+          <label for="f-fassung">Fassung (Name / Kürzel)</label>
+          <input id="f-fassung-suche" type="search" placeholder="Suchen …" autocomplete="off">
+          <select id="f-fassung" name="fassung" required></select>
+          <input id="f-fassung-frei" name="fassungFrei" placeholder="Name der Fassung (Freitext)" hidden>
+        </div>
+
+        <div class="card">
+          <label>Probengrösse</label>
+          <div class="seg four" id="seg-volumen">
+            <input type="radio" name="volumen" id="v5" value="5"><label for="v5">5 l</label>
+            <input type="radio" name="volumen" id="v10" value="10" checked><label for="v10">10 l</label>
+            <input type="radio" name="volumen" id="v15" value="15"><label for="v15">15 l</label>
+            <input type="radio" name="volumen" id="v20" value="20"><label for="v20">20 l</label>
+          </div>
+
+          <label>Zeitaufwand Probenahme</label>
+          <div class="stopwatch">
+            <div id="sw-display" class="sw-display">0.0 s</div>
+            <div class="row">
+              <button type="button" id="sw-start" class="btn primary big">Start</button>
+              <button type="button" id="sw-reset" class="btn big">Reset</button>
+            </div>
+            <div class="row manual">
+              <label for="f-zeit" class="inline">Sekunden (manuell)</label>
+              <input id="f-zeit" name="zeit" inputmode="decimal" autocomplete="off" placeholder="0.0">
+            </div>
+            <div id="schuettung" class="hint"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <label for="f-bemerkung">Bemerkung (optional)</label>
+          <textarea id="f-bemerkung" name="bemerkung" rows="2"></textarea>
+        </div>
+
+        <div id="form-fehler" class="error" hidden></div>
+        <button type="submit" class="btn primary block">Messung speichern</button>
+      </form>
+    </section>
+
+    <!-- ============ MESSUNGEN ============ -->
+    <section id="tab-messungen" class="tab">
+      <div class="card">
+        <div class="row wrap">
+          <button id="btn-export-xlsx" class="btn primary">Excel exportieren</button>
+          <button id="btn-export-csv" class="btn">CSV exportieren</button>
+        </div>
+        <p class="hint">Die Messungen werden auf diesem Gerät gespeichert. Bitte regelmässig exportieren.</p>
+      </div>
+      <ul id="liste-messungen" class="list"></ul>
+      <button id="btn-alle-loeschen" class="btn danger block">Alle Messungen löschen</button>
+    </section>
+
+    <!-- ============ FASSUNGEN ============ -->
+    <section id="tab-fassungen" class="tab">
+      <div class="card">
+        <h2>Fassung hinzufügen</h2>
+        <form id="form-fassung" novalidate>
+          <div class="row">
+            <div class="grow">
+              <label for="s-kuerzel">Kürzel</label>
+              <input id="s-kuerzel" required>
+            </div>
+            <div class="grow2">
+              <label for="s-name">Name</label>
+              <input id="s-name" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="grow">
+              <label for="s-typ">Art</label>
+              <select id="s-typ">
+                <option>Quelle</option>
+                <option>Grundwasserfassung</option>
+              </select>
+            </div>
+            <div class="grow">
+              <label for="s-projekt">Projekt</label>
+              <input id="s-projekt" list="dl-projekte">
+            </div>
+          </div>
+          <div class="row">
+            <div class="grow">
+              <label for="s-lat">Breite / N</label>
+              <input id="s-lat" inputmode="decimal" placeholder="47.3769 oder 1247000">
+            </div>
+            <div class="grow">
+              <label for="s-lon">Länge / E</label>
+              <input id="s-lon" inputmode="decimal" placeholder="8.5417 oder 2683000">
+            </div>
+          </div>
+          <p class="hint">WGS84 (Grad) oder Schweizer Koordinaten LV95/LV03 werden erkannt.</p>
+          <div class="row wrap">
+            <button type="button" id="btn-s-gps" class="btn">📍 Aktuellen Standort übernehmen</button>
+            <button type="submit" class="btn primary">Speichern</button>
+          </div>
+          <div id="fassung-fehler" class="error" hidden></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Import / Export</h2>
+        <p class="hint">CSV-Datei mit Spalten <code>Kürzel; Name; Art; Projekt; Breite; Länge</code>
+          (oder <code>E; N</code> in LV95). Gleiche Kürzel werden aktualisiert.</p>
+        <div class="row wrap">
+          <label class="btn file">CSV importieren<input type="file" id="file-fassungen" accept=".csv,.txt,text/csv" hidden></label>
+          <button id="btn-fassungen-export" class="btn">CSV exportieren</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Einstellungen</h2>
+        <label for="set-radius">Radius für automatische Zuordnung (m)</label>
+        <input id="set-radius" type="number" inputmode="numeric" min="10" step="10">
+      </div>
+
+      <ul id="liste-fassungen" class="list"></ul>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="xlsx.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
