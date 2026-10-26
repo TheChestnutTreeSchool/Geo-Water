@@ -44,7 +44,7 @@
     fassungen.forEach((f) => { fassQueue[f.kuerzel.toLowerCase()] = { op: 'upsert', f }; });
   }
   const prefs = Object.assign({
-    projekt: '', mitarbeiter: '', typ: 'Quelle', volumen: '10',
+    projekt: '', mitarbeiter: '', volumen: '10',
     radius: 100, anzahl: 3, wach: true, ton: true, sprache: false,
     dbUrl: '', dbKey: '', sheetUrl: '', lastSync: 0
   }, load(KEY.prefs, {}));
@@ -246,7 +246,6 @@
   function initForm() {
     $('#f-projekt').value = prefs.projekt;
     $('#f-mitarbeiter').value = prefs.mitarbeiter;
-    setRadio('typ', prefs.typ);
     setRadio('volumen', prefs.volumen);
     inpAnzahl.value = prefs.anzahl;
     setNow();
@@ -309,7 +308,6 @@
   function applySite(kuerzel) {
     const f = fassungen.find((x) => x.kuerzel === kuerzel);
     if (f) {
-      if (f.typ) setRadio('typ', f.typ);
       if (f.projekt && !$('#f-projekt').value.trim()) $('#f-projekt').value = f.projekt;
     }
     if (kuerzel) setAnzahl(anzahlFor(f));
@@ -758,7 +756,6 @@
       id: uid(),
       erfasst: new Date().toISOString(),
       datum,
-      typ: getRadio('typ'),
       projekt,
       mitarbeiter,
       fassungKuerzel: f ? f.kuerzel : '',
@@ -779,7 +776,7 @@
     messungen.push(rec);
     if (!save(KEY.messungen, messungen)) { messungen.pop(); return; }
 
-    Object.assign(prefs, { projekt, mitarbeiter, typ: rec.typ, volumen: String(volumen) });
+    Object.assign(prefs, { projekt, mitarbeiter, volumen: String(volumen) });
     save(KEY.prefs, prefs);
 
     // Formular für die nächste Probe vorbereiten
@@ -831,7 +828,7 @@
           <div class="title">${esc(name)} ${sync}</div>
           <div class="meta">${esc(fmtDate(new Date(m.datum)))} · ${esc(m.mitarbeiter)} · ${esc(m.projekt)}</div>
           <div class="meta">${m.volumen} l · ${m.zeiten.length}× · Ø ${fmtNum(m.zeit, 2)} s${zeiten} · ${fmtNum(m.schuettung, 3)} l/s</div>
-          <div class="meta">${esc(m.typ)} · ${esc(m.zuordnung)}${m.bemerkung ? ' · ' + esc(m.bemerkung) : ''}</div>
+          <div class="meta">${esc(m.zuordnung)}${m.bemerkung ? ' · ' + esc(m.bemerkung) : ''}</div>
         </div>
         <button class="del" data-id="${esc(m.id)}" aria-label="Löschen">${ic('trash-2')}</button>
       </li>`;
@@ -872,7 +869,6 @@
   function messFields(m, minZeiten) {
     const fields = [
       ['Probe genommen am', new Date(m.datum)],
-      ['Fassungsart', m.typ],
       ['Projekt', m.projekt],
       ['Probe genommen von', m.mitarbeiter],
       ['Fassung Kürzel', m.fassungKuerzel],
@@ -907,9 +903,9 @@
     return { header, rows };
   }
 
-  const FASS_HEADER = ['Kürzel', 'Name', 'Art', 'Projekt', 'Breite', 'Länge', 'Anzahl Messungen'];
+  const FASS_HEADER = ['Kürzel', 'Name', 'Projekt', 'Breite', 'Länge', 'Anzahl Messungen'];
   function fassRows() {
-    return fassungen.map((f) => [f.kuerzel, f.name, f.typ, f.projekt,
+    return fassungen.map((f) => [f.kuerzel, f.name, f.projekt,
       hasCoords(f) ? round(f.lat, 6) : null, hasCoords(f) ? round(f.lon, 6) : null, f.anzahl || null]);
   }
   const widths = (header) => header.map((h) => ({ header: h, width: Math.max(11, h.length + 3) }));
@@ -974,7 +970,7 @@
     ul.innerHTML = fassungen.map((f) => `<li>
         <div class="main" data-k="${esc(f.kuerzel)}">
           <div class="title">${esc(siteLabel(f))}${fassQueue[lc(f.kuerzel)] && prefs.dbUrl ? ` <span class="sync pending" title="noch nicht übertragen">${ic('cloud-upload')}</span>` : ''}</div>
-          <div class="meta">${esc([f.typ, f.projekt, `${anzahlFor(f)} Messungen${f.anzahl ? '' : ' (Standard)'}`].filter(Boolean).join(' · '))}</div>
+          <div class="meta">${esc([f.projekt, `${anzahlFor(f)} Messungen${f.anzahl ? '' : ' (Standard)'}`].filter(Boolean).join(' · '))}</div>
           <div class="meta">${hasCoords(f) ? `${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}` : 'keine Koordinaten'}</div>
         </div>
         <button class="del" data-k="${esc(f.kuerzel)}" aria-label="Löschen">${ic('trash-2')}</button>
@@ -996,7 +992,6 @@
     if (!f) return;
     $('#s-kuerzel').value = f.kuerzel;
     $('#s-name').value = f.name || '';
-    $('#s-typ').value = f.typ || 'Quelle';
     $('#s-anzahl').value = f.anzahl || '';
     $('#s-projekt').value = f.projekt || '';
     $('#s-lat').value = hasCoords(f) ? f.lat.toFixed(6) : '';
@@ -1023,7 +1018,7 @@
       return;
     }
     box.hidden = true;
-    const f = { kuerzel, name, typ: $('#s-typ').value, projekt: $('#s-projekt').value.trim() };
+    const f = { kuerzel, name, projekt: $('#s-projekt').value.trim() };
     if (c) { f.lat = c.lat; f.lon = c.lon; }
     if (anzahl) f.anzahl = anzahl;
     const res = upsertFassung(f);
@@ -1050,7 +1045,6 @@
   const HEADER_ALIASES = {
     kuerzel: ['kurzel', 'kuerzel', 'kurz', 'code', 'id', 'nr', 'nummer', 'abk', 'abkurzung', 'kurzname'],
     name: ['name', 'bezeichnung', 'fassung', 'fassungsname', 'quelle', 'quellname', 'standort'],
-    typ: ['typ', 'art', 'fassungsart', 'fassungstyp', 'type'],
     projekt: ['projekt', 'projektname', 'project'],
     anzahl: ['anzahlmessungen', 'anzmessungen', 'anzahl', 'messungen', 'wiederholungen'],
     a: ['lat', 'latitude', 'breite', 'breitengrad', 'n', 'nord', 'north', 'northing', 'x', 'hochwert'],
@@ -1058,13 +1052,6 @@
   };
   const normHeader = (h) => String(h).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     .replace(/\(.*?\)|\[.*?\]/g, '').replace(/[^a-z0-9]/g, '');
-
-  function normTyp(s) {
-    const t = (s || '').toLowerCase();
-    if (t.includes('grund') || t === 'gw' || t.includes('brunnen')) return 'Grundwasserfassung';
-    if (t.includes('quel') || t === 'q') return 'Quelle';
-    return '';
-  }
 
   function rowsToFassungen(header, rows) {
     const idx = {};
@@ -1082,7 +1069,7 @@
       const get = (k) => (idx[k] != null && r[idx[k]] != null ? String(r[idx[k]]).trim() : '');
       const kuerzel = get('kuerzel') || get('name');
       if (!kuerzel) { if (r.some((v) => String(v).trim())) fehlerZeilen.push(i + 2); return; }
-      const f = { kuerzel, name: get('name') || kuerzel, typ: normTyp(get('typ')), projekt: get('projekt') };
+      const f = { kuerzel, name: get('name') || kuerzel, projekt: get('projekt') };
       const c = parseCoords(get('a'), get('b'));
       if (c && c.error) fehlerZeilen.push(i + 2);
       else if (c) { f.lat = c.lat; f.lon = c.lon; }

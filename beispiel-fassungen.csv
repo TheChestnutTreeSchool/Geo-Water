@@ -1,4 +1,4 @@
-Kürzel;Name;Art;Projekt;Breite / N;Länge / E;Anzahl Messungen
-Q01;Quelle Waldrand;Quelle;Beispielprojekt;47.376900;8.541700;3
-Q02;Quelle Bachtobel;Quelle;Beispielprojekt;1248150;2683420;2
-GW1;Grundwasserfassung Au;Grundwasserfassung;Beispielprojekt;1246800;2682100;
+Kürzel;Name;Projekt;Breite / N;Länge / E;Anzahl Messungen
+Q01;Quelle Waldrand;Beispielprojekt;47.376900;8.541700;3
+Q02;Quelle Bachtobel;Beispielprojekt;1248150;2683420;2
+Q03;Fassung Au;Beispielprojekt;1246800;2682100;

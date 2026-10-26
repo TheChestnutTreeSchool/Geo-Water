@@ -8,7 +8,6 @@ Funktioniert **offline** im Feld. Alle Geräte speichern in eine **gemeinsame Go
 
 | Feld | Erfassung |
 |---|---|
-| Fassungsart | Quelle / Grundwasserfassung (wird aus der Fassungsliste vorbelegt) |
 | Projektname | Freitext mit Vorschlägen, bleibt für die nächste Probe gespeichert |
 | Probe genommen von | Name der Mitarbeiterin / des Mitarbeiters, bleibt gespeichert |
 | Probe genommen am | Datum + Uhrzeit, automatisch beim Start der ersten Zeitmessung (änderbar) |

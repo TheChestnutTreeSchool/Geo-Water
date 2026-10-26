@@ -15,7 +15,7 @@ const SCHLUESSEL = 'bitte-aendern';   // gleicher Zugangsschlüssel wie in der A
 
 const BLATT_MESSUNGEN = 'Messungen';
 const BLATT_FASSUNGEN = 'Fassungen';
-const FASSUNG_SPALTEN = ['Kürzel', 'Name', 'Art', 'Projekt', 'Breite', 'Länge', 'Anzahl Messungen', 'Geändert am'];
+const FASSUNG_SPALTEN = ['Kürzel', 'Name', 'Projekt', 'Breite', 'Länge', 'Anzahl Messungen', 'Geändert am'];
 const DATUM_SPALTEN = ['Probe genommen am', 'Erfasst am', 'Geändert am'];
 const DATUM_FORMAT = 'dd.mm.yyyy hh:mm';
 
@@ -173,7 +173,6 @@ function aendereFassungen(ops) {
     const neu = {
       'Kürzel': k,
       'Name': f.name || '',
-      'Art': f.typ || '',
       'Projekt': f.projekt || '',
       'Breite': typeof f.lat === 'number' ? Math.round(f.lat * 1e6) / 1e6 : '',
       'Länge': typeof f.lon === 'number' ? Math.round(f.lon * 1e6) / 1e6 : '',

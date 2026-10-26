@@ -113,6 +113,7 @@ input.invalid, select.invalid { border-color: var(--danger); }
 .row > input { flex: 1; min-width: 0; }
 .row .grow { flex: 1; min-width: 0; }
 .row .grow2 { flex: 2; min-width: 0; }
+.row:has(> .grow, > .grow2) { align-items: flex-end; }   /* Felder bündig, auch bei umbrechender Beschriftung */
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;

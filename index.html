@@ -68,14 +68,6 @@
     <section id="tab-erfassen" class="tab active">
       <form id="form-messung" novalidate>
         <div class="card">
-          <label>Fassungsart</label>
-          <div class="seg" id="seg-typ">
-            <input type="radio" name="typ" id="typ-q" value="Quelle" checked>
-            <label for="typ-q"><svg class="ic" aria-hidden="true"><use href="#i-droplet"/></svg>Quelle</label>
-            <input type="radio" name="typ" id="typ-g" value="Grundwasserfassung">
-            <label for="typ-g"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg>Grundwasserfassung</label>
-          </div>
-
           <label for="f-projekt">Projektname</label>
           <input id="f-projekt" name="projekt" list="dl-projekte" autocomplete="off" required>
           <datalist id="dl-projekte"></datalist>
@@ -184,19 +176,14 @@
           </div>
           <div class="row">
             <div class="grow2">
-              <label for="s-typ">Art</label>
-              <select id="s-typ">
-                <option>Quelle</option>
-                <option>Grundwasserfassung</option>
-              </select>
+              <label for="s-projekt">Projekt</label>
+              <input id="s-projekt" list="dl-projekte">
             </div>
             <div class="grow">
               <label for="s-anzahl">Anz. Messungen</label>
               <input id="s-anzahl" inputmode="numeric" placeholder="Standard">
             </div>
           </div>
-          <label for="s-projekt">Projekt</label>
-          <input id="s-projekt" list="dl-projekte">
           <div class="row">
             <div class="grow">
               <label for="s-lat">Breite / N</label>
@@ -218,7 +205,7 @@
 
       <div class="card">
         <h2>Import / Export</h2>
-        <p class="hint first">CSV-Datei mit Spalten <code>Kürzel; Name; Art; Projekt; Breite; Länge; Anzahl Messungen</code>
+        <p class="hint first">CSV-Datei mit Spalten <code>Kürzel; Name; Projekt; Breite; Länge; Anzahl Messungen</code>
           (oder <code>E; N</code> in LV95). Gleiche Kürzel werden aktualisiert.</p>
         <div class="row wrap">
           <label class="btn file"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg>CSV importieren<input type="file" id="file-fassungen" accept=".csv,.txt,text/csv" hidden></label>

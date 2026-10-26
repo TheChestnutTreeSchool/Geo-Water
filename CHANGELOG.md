@@ -3,6 +3,9 @@
 Die oberste Version ist die aktuelle. Beim Veröffentlichen werden Nummer und Punkte in die App übernommen
 und nach einem Update angezeigt. Nummerierung: Hauptversion.Neue Funktionen.Korrekturen (z. B. 1.2.0 → 1.2.1).
 
+## 1.1.0 – 26.10.2026
+- Keine Unterscheidung mehr zwischen Quelle und Grundwasserfassung – das Feld «Fassungsart» entfällt
+
 ## 1.0.0 – 26.10.2026
 - Versionsnummern: jede Version hat einen eigenen Link
 - Die App sucht selbst nach Updates und aktualisiert sich auf Knopfdruck
