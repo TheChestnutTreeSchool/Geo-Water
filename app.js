@@ -1281,6 +1281,8 @@
   }
 
   function renderEinstellungen() {
+    const ver = $('#app-version');
+    if (ver.textContent.includes('__')) ver.textContent = 'lokal (nicht veröffentlicht)';
     $('#set-db-url').value = prefs.dbUrl;
     $('#set-db-key').value = prefs.dbKey;
     $('#set-anzahl').value = prefs.anzahl;

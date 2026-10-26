@@ -40,6 +40,9 @@ jobs:
           cp index.html app.js sprache.js xlsx.js style.css sw.js manifest.webmanifest \
              icon.svg icon-192.png icon-512.png icon-maskable-512.png beispiel-fassungen.csv _site/
           cp -r vosk _site/vosk
+          VERSION="$(TZ=Europe/Zurich date '+%d.%m.%Y %H:%M') · ${GITHUB_SHA::7}"
+          sed -i "s|__APP_VERSION__|$VERSION|" _site/index.html
+          echo "Version: $VERSION"
           ls -la _site _site/vosk
 
       - uses: actions/upload-pages-artifact@v3
