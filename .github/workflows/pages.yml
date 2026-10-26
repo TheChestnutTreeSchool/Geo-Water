@@ -4,6 +4,9 @@ name: App veröffentlichen
 on:
   push:
     branches: ['**']   # Versions-Tags (v1.2.3) lösen keinen eigenen Build aus
+    paths-ignore:       # reine Doku-Änderungen ergeben keine neue App-Version
+      - README.md
+      - CLAUDE.md
   workflow_dispatch:
 
 permissions:

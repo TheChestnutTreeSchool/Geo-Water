@@ -10,7 +10,8 @@
 2. Commit und Push. Der Workflow «App veröffentlichen» trägt Version, Datum und Commit automatisch
    in die App ein (`tools/release.py`) – die Cache-Version in `sw.js` muss **nicht** mehr von Hand erhöht werden.
 3. Warten, bis der Workflow (Build **und** Deploy) erfolgreich war.
-4. Tag setzen und pushen: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-5. Dem Nutzer den **Link zur neuen Version** posten:
+   (Git-Tags lassen sich aus der Cloud-Umgebung nicht pushen – nicht nötig, die Version steht in
+   `CHANGELOG.md`, in der App und mit Commit in `version.json`.)
+4. Dem Nutzer den **Link zur neuen Version** posten:
    `https://thechestnuttreeschool.github.io/Geo-Water/?v=X.Y.Z` – mit Versionsnummer und den Änderungen.
    Der Link aktualisiert die installierte App automatisch auf diese Version.
