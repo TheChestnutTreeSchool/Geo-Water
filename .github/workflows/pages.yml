@@ -28,9 +28,11 @@ jobs:
         run: bash tools/sprachmodell-laden.sh
 
       - name: Sprachmodell prüfen (Befehlswörter, Probe mit synthetischer Stimme)
+        timeout-minutes: 8
         run: |
-          sudo apt-get install -y -qq espeak-ng >/dev/null
-          pip install -q vosk
+          # Sprachprobe ist nur informativ: espeak-ng darf fehlen, darf aber den Build nicht blockieren
+          sudo timeout 180 apt-get install -y -qq espeak-ng >/dev/null || echo "espeak-ng nicht installiert – Sprachprobe entfällt"
+          timeout 180 pip install -q vosk
           mkdir -p /tmp/modell && tar -xzf vosk/model-de.tar.gz -C /tmp/modell
           python3 tools/sprachtest.py /tmp/modell/model
 
