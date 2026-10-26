@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b6e99">
   <title>Geo-Water</title>
+  <!-- Platzhalter werden beim Veröffentlichen ersetzt (tools/release.py) -->
+  <meta name="app-version" content="__APP_VERSION__">
+  <meta name="app-build" content="__APP_BUILD__">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
@@ -59,6 +62,8 @@
   </nav>
 
   <main>
+    <div id="update-banner" class="update" role="status" hidden></div>
+
     <!-- ============ ERFASSEN ============ -->
     <section id="tab-erfassen" class="tab active">
       <form id="form-messung" novalidate>
@@ -264,8 +269,16 @@
         <input id="set-radius" inputmode="numeric">
       </div>
 
-      <!-- Platzhalter wird beim Veröffentlichen durch Datum und Commit ersetzt -->
-      <p class="hint version">Version <span id="app-version">__APP_VERSION__</span></p>
+      <div class="card">
+        <h2>App-Version</h2>
+        <p class="version-line"><strong id="app-version"></strong> <span id="app-build" class="hint"></span></p>
+        <div id="update-status" class="hint"></div>
+        <ul id="update-notes" class="notes"></ul>
+        <div class="row wrap gap-top">
+          <button id="btn-update-check" class="btn"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg>Nach Updates suchen</button>
+          <button id="btn-version-link" class="btn"><svg class="ic" aria-hidden="true"><use href="#i-share-2"/></svg>Link zu dieser Version</button>
+        </div>
+      </div>
     </section>
   </main>
 

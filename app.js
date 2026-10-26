@@ -1281,8 +1281,7 @@
   }
 
   function renderEinstellungen() {
-    const ver = $('#app-version');
-    if (ver.textContent.includes('__')) ver.textContent = 'lokal (nicht veröffentlicht)';
+    renderVersion();
     $('#set-db-url').value = prefs.dbUrl;
     $('#set-db-key').value = prefs.dbKey;
     $('#set-anzahl').value = prefs.anzahl;
@@ -1364,6 +1363,169 @@
   }, 120000);
 
   // =====================================================================
+  // VERSION & UPDATES
+  // =====================================================================
+  // Version und Build werden beim Veröffentlichen eingetragen (tools/release.py, Quelle: CHANGELOG.md)
+  const APP_VERSION = $('meta[name="app-version"]').content;
+  const APP_BUILD = $('meta[name="app-build"]').content;
+  const LOKAL = APP_VERSION.includes('__');
+  const banner = $('#update-banner');
+  let remote = null, lastCheck = 0, updating = false;
+
+  function cmpVersion(a, b) {
+    const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+    for (let i = 0; i < 3; i++) {
+      const d = (pa[i] || 0) - (pb[i] || 0);
+      if (d) return d;
+    }
+    return 0;
+  }
+  const versionLink = (v) => `${location.origin}${location.pathname}?v=${v}`;
+  const notesHtml = (list) => (list || []).map((a) => `<li>${esc(a)}</li>`).join('');
+
+  async function checkUpdate(manuell) {
+    if (LOKAL) { if (manuell) toast('Lokale Version – keine Updates'); return; }
+    if (!navigator.onLine) { if (manuell) toast('Offline – Update-Prüfung nicht möglich'); return; }
+    lastCheck = Date.now();
+    try {
+      const res = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      remote = await res.json();
+      if (cmpVersion(remote.version, APP_VERSION) > 0) showBanner('neu');
+      else if (manuell) toast(`Version ${APP_VERSION} ist aktuell`);
+    } catch (e) {
+      if (manuell) toast('Update-Prüfung fehlgeschlagen: ' + e.message);
+    }
+    if (activeTab() === 'tab-einstellungen') renderVersion();
+  }
+
+  function showBanner(art) {
+    if (art === 'neu') {
+      banner.className = 'update';
+      banner.innerHTML = `<div class="update-head">${ic('download')}<strong>Neue Version ${esc(remote.version)} verfügbar</strong></div>
+        <ul class="notes">${notesHtml(remote.aenderungen)}</ul>
+        <div class="row wrap">
+          <button type="button" class="btn primary" data-act="update">${ic('refresh-cw')}Jetzt aktualisieren</button>
+          <button type="button" class="btn" data-act="zu">Später</button>
+        </div>`;
+    } else {
+      const notes = remote && remote.version === APP_VERSION ? remote.aenderungen : [];
+      banner.className = 'update ok';
+      banner.innerHTML = `<div class="update-head">${ic('check')}<strong>Aktualisiert auf Version ${esc(APP_VERSION)}</strong></div>
+        <ul class="notes">${notesHtml(notes)}</ul>
+        <div class="row wrap"><button type="button" class="btn" data-act="zu">OK</button></div>`;
+    }
+    banner.hidden = false;
+  }
+  banner.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    if (b.dataset.act === 'update') applyUpdate();
+    else banner.hidden = true;
+  });
+
+  // Neue Version laden: Service Worker aktualisieren (lädt alle Dateien neu), dann App neu starten.
+  // Die Daten (Messungen, Fassungen, Einstellungen) bleiben im Gerätespeicher erhalten.
+  async function applyUpdate() {
+    if (updating) return;
+    if (sw.running) { toast('Bitte zuerst die laufende Messung stoppen'); return; }
+    updating = true;
+    banner.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    toast('Neue Version wird geladen …');
+    try {
+      const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        await reg.update();
+        if (reg.installing || reg.waiting) {
+          await new Promise((resolve) => {
+            const t = setTimeout(resolve, 10000);
+            navigator.serviceWorker.addEventListener('controllerchange', () => { clearTimeout(t); resolve(); }, { once: true });
+          });
+        }
+      }
+    } catch (e) { /* trotzdem neu laden – die Dateien kommen dann direkt vom Server */ }
+    location.reload();
+  }
+
+  // Link auf eine bestimmte Version (…/?v=1.2.0): bei Bedarf sofort aktualisieren
+  function handleVersionLink() {
+    const want = new URLSearchParams(location.search).get('v');
+    if (!want || LOKAL) return false;
+    const fertig = () => {
+      sessionStorage.removeItem('gw.updVersuch');
+      history.replaceState(null, '', location.pathname + location.hash);
+    };
+    const d = cmpVersion(want, APP_VERSION);
+    if (d > 0) {
+      const n = Number(sessionStorage.getItem('gw.updVersuch') || 0);
+      if (n < 3 && navigator.onLine && !sw.running) {
+        sessionStorage.setItem('gw.updVersuch', String(n + 1));
+        applyUpdate();
+        return true;
+      }
+      fertig();
+      toast(sw.running ? 'Update nach der laufenden Messung möglich'
+        : `Version ${want} ist noch nicht verfügbar – bitte in ein paar Minuten erneut öffnen`);
+    } else {
+      fertig();
+      toast(d === 0 ? `Version ${APP_VERSION} ist aktiv` : `Es läuft bereits die neuere Version ${APP_VERSION}`);
+    }
+    return false;
+  }
+
+  // Nach einem Update einmal anzeigen, was neu ist
+  async function announceUpdate() {
+    if (LOKAL) return;
+    let seen = null;
+    try { seen = localStorage.getItem('gw.version'); localStorage.setItem('gw.version', APP_VERSION); } catch (e) { return; }
+    if (!seen || cmpVersion(APP_VERSION, seen) <= 0) return;
+    try {
+      const res = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) remote = await res.json();
+    } catch (e) { /* Änderungen dann ohne Details */ }
+    if (!remote || cmpVersion(remote.version, APP_VERSION) <= 0) showBanner('erledigt');
+  }
+
+  function renderVersion() {
+    $('#app-version').textContent = LOKAL ? 'Lokale Version (nicht veröffentlicht)' : `Version ${APP_VERSION}`;
+    $('#app-build').textContent = LOKAL ? '' : APP_BUILD;
+    const st = $('#update-status');
+    if (remote && cmpVersion(remote.version, APP_VERSION) > 0) {
+      st.innerHTML = `${ic('download')} Neue Version ${esc(remote.version)} verfügbar`;
+      st.className = 'hint warn';
+    } else if (remote) {
+      st.innerHTML = `${ic('check')} Aktuell`;
+      st.className = 'hint ok';
+    } else {
+      st.textContent = '';
+    }
+    $('#update-notes').innerHTML = notesHtml(remote && remote.version === APP_VERSION ? remote.aenderungen : []);
+    $('#btn-version-link').hidden = LOKAL;
+  }
+
+  $('#btn-update-check').addEventListener('click', async () => {
+    await checkUpdate(true);
+    if (remote && cmpVersion(remote.version, APP_VERSION) > 0) window.scrollTo(0, 0);
+  });
+  $('#btn-version-link').addEventListener('click', async () => {
+    const link = versionLink(APP_VERSION);
+    const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    try {
+      if (touch && navigator.share) await navigator.share({ title: `Geo-Water ${APP_VERSION}`, url: link });
+      else { await navigator.clipboard.writeText(link); toast('Link kopiert'); }
+    } catch (e) {
+      if (e.name !== 'AbortError') prompt('Link kopieren:', link);
+    }
+  });
+
+  // regelmässig nach Updates suchen: beim Start, alle 30 Minuten, beim Zurückkehren in die App
+  window.addEventListener('online', () => checkUpdate(false));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && Date.now() - lastCheck > 10 * 60000) checkUpdate(false);
+  });
+  setInterval(() => checkUpdate(false), 30 * 60000);
+
+  // =====================================================================
   // START
   // =====================================================================
   initForm();
@@ -1376,6 +1538,10 @@
   updateSyncBadge();
   locate(false);
   sync({ silent: true });
+  if (!handleVersionLink()) {
+    announceUpdate();
+    setTimeout(() => checkUpdate(false), 3000);
+  }
 
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});

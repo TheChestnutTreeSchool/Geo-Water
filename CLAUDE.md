@@ -1,8 +1,16 @@
 # Geo-Water – Hinweise für Claude
 
 - Antworten auf Deutsch (Schweizer Schreibweise, «ss» statt «ß»).
-- Nach jeder Änderung, die veröffentlicht wird: Push abwarten, prüfen, dass der Workflow
-  «App veröffentlichen» (Build **und** Deploy) erfolgreich war, und dann dem Nutzer den Link posten:
-  **https://thechestnuttreeschool.github.io/Geo-Water/** – zusammen mit der Versionsangabe
-  («TT.MM.JJJJ HH:MM · <7-stelliger Commit>», steht in der App unter ⚙ ganz unten).
-- Bei Änderungen an App-Dateien die Cache-Version `CACHE` in `sw.js` erhöhen.
+
+## Neue Version veröffentlichen
+
+1. In `CHANGELOG.md` zuoberst eine neue Version eintragen: `## X.Y.Z – TT.MM.JJJJ` und darunter
+   Stichpunkte (`- …`) in einfacher Sprache für die Nutzer. Nummerierung: neue Funktion → Y erhöhen,
+   reine Korrektur → Z erhöhen. Diese Punkte zeigt die App nach dem Update an.
+2. Commit und Push. Der Workflow «App veröffentlichen» trägt Version, Datum und Commit automatisch
+   in die App ein (`tools/release.py`) – die Cache-Version in `sw.js` muss **nicht** mehr von Hand erhöht werden.
+3. Warten, bis der Workflow (Build **und** Deploy) erfolgreich war.
+4. Tag setzen und pushen: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+5. Dem Nutzer den **Link zur neuen Version** posten:
+   `https://thechestnuttreeschool.github.io/Geo-Water/?v=X.Y.Z` – mit Versionsnummer und den Änderungen.
+   Der Link aktualisiert die installierte App automatisch auf diese Version.

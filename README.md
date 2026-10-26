@@ -121,6 +121,19 @@ Auf dem **Android-Handy**:
 Lokal testen: `bash tools/sprachmodell-laden.sh`, dann `python3 -m http.server` im Projektordner und
 `http://localhost:8000` öffnen.
 
+## Versionen und Updates
+
+- Jede Version hat eine Nummer (z. B. 1.2.0). Was sich geändert hat, steht in [`CHANGELOG.md`](CHANGELOG.md).
+- **Link zu einer Version:** `https://thechestnuttreeschool.github.io/Geo-Water/?v=1.2.0` – öffnet die App und
+  aktualisiert sie, falls noch eine ältere Version installiert ist.
+- **Automatische Update-Prüfung:** Beim Öffnen, alle 30 Minuten und beim Zurückkehren in die App. Gibt es eine
+  neue Version, erscheint oben «Neue Version … verfügbar» mit den Änderungen und dem Knopf **Jetzt aktualisieren**.
+  Während einer laufenden Messung wird nicht aktualisiert.
+- Nach dem Update zeigt die App einmal an, was neu ist. Messungen, Fassungen und Einstellungen bleiben erhalten.
+- Unter ⚙ → «App-Version»: aktuelle Version, «Nach Updates suchen», «Link zu dieser Version».
+- Veröffentlichen: neue Version zuoberst in `CHANGELOG.md` eintragen und pushen – der Rest geschieht automatisch
+  (`tools/release.py` setzt Version und `version.json`).
+
 ## Dateien
 
 | Datei | Inhalt |
@@ -139,4 +152,4 @@ Spracherkennung: [vosk-browser](https://github.com/ccoreilly/vosk-browser) und M
 [vosk-model-small-de](https://alphacephei.com/vosk/models), beide Apache-2.0-Lizenz.
 Icons: [Lucide](https://lucide.dev), ISC-Lizenz – direkt in `index.html` eingebettet (funktioniert offline).
 
-Nach Änderungen an den App-Dateien die Versionsnummer `CACHE` in `sw.js` erhöhen, damit die Geräte das Update laden.
+Neue Versionen werden über `CHANGELOG.md` nummeriert (siehe «Versionen und Updates»).

@@ -3,6 +3,7 @@ name: App veröffentlichen
 
 on:
   push:
+    branches: ['**']   # Versions-Tags (v1.2.3) lösen keinen eigenen Build aus
   workflow_dispatch:
 
 permissions:
@@ -40,11 +41,10 @@ jobs:
         run: |
           mkdir _site
           cp index.html app.js sprache.js xlsx.js style.css sw.js manifest.webmanifest \
-             icon.svg icon-192.png icon-512.png icon-maskable-512.png beispiel-fassungen.csv _site/
+             icon.svg icon-192.png icon-512.png icon-maskable-512.png beispiel-fassungen.csv CHANGELOG.md _site/
           cp -r vosk _site/vosk
-          VERSION="$(TZ=Europe/Zurich date '+%d.%m.%Y %H:%M') · ${GITHUB_SHA::7}"
-          sed -i "s|__APP_VERSION__|$VERSION|" _site/index.html
-          echo "Version: $VERSION"
+          # Version und Änderungen aus CHANGELOG.md eintragen, version.json für die Update-Prüfung
+          python3 tools/release.py _site
           ls -la _site _site/vosk
 
       - uses: actions/upload-pages-artifact@v3
