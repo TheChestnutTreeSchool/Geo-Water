@@ -54,6 +54,8 @@
   // ---------- Helfer ----------
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  // Icon aus dem eingebetteten Icon-Set (index.html)
+  const ic = (name, cls) => `<svg class="ic${cls ? ' ' + cls : ''}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
@@ -436,21 +438,21 @@
     info.className = 'sw-info';
     if (sw.running) {
       info.textContent = `Messung ${k + 1} von ${n} läuft …`;
-      swStart.textContent = 'Stopp';
+      swStart.innerHTML = ic('square') + '<span>Stopp</span>';
     } else if (k < n) {
       info.textContent = `Messung ${k + 1} von ${n}`;
-      swStart.textContent = k ? `Start Messung ${k + 1}` : 'Start';
+      swStart.innerHTML = ic('play') + `<span>${k ? `Start Messung ${k + 1}` : 'Start'}</span>`;
     } else {
       info.textContent = k === n ? `Alle ${n} Messungen erfasst` : `${k} Zeiten erfasst, aber nur ${n} vorgesehen`;
       info.classList.add(k === n ? 'done' : 'warn');
-      swStart.textContent = 'Fertig';
+      swStart.innerHTML = ic('check') + '<span>Fertig</span>';
     }
     swStart.disabled = !sw.running && k >= n;
     swStart.classList.toggle('running', sw.running);
     $('#btn-zeit-add').disabled = sw.running || k >= n;
 
     $('#sw-zeiten').innerHTML = sw.zeiten.map((z, i) =>
-      `<li><span>${i + 1}.</span> ${z.toFixed(1)} s<button type="button" class="x" data-i="${i}" aria-label="Zeit ${i + 1} löschen">✕</button></li>`
+      `<li><span>${i + 1}.</span> ${z.toFixed(1)} s<button type="button" class="x" data-i="${i}" aria-label="Zeit ${i + 1} löschen">${ic('x')}</button></li>`
     ).join('');
     $('#sw-reset').hidden = !k;
 
@@ -621,7 +623,7 @@
       el.textContent = 'Dieser Browser kann den Bildschirm nicht wach halten – bitte in den Android-Einstellungen die Bildschirm-Zeitlimit verlängern.';
       el.className = 'hint warn';
     } else {
-      el.textContent = wakeLock ? 'Bildschirm bleibt eingeschaltet ✓' : '';
+      el.innerHTML = wakeLock ? ic('check') + ' Bildschirm bleibt eingeschaltet' : '';
       el.className = 'hint ok';
     }
   }
@@ -639,7 +641,7 @@
     btnSprache.classList.toggle('on', on && state === 'aktiv');
     btnSprache.classList.toggle('busy', on && state !== 'aktiv');
     btnSprache.setAttribute('aria-pressed', String(on));
-    btnSprache.textContent = on ? '🎤 Sprachsteuerung EIN' : '🎤 Sprachsteuerung AUS';
+    btnSprache.innerHTML = on ? ic('mic') + '<span>Sprachsteuerung EIN</span>' : ic('mic-off') + '<span>Sprachsteuerung AUS</span>';
     pegel.hidden = !(on && state === 'aktiv');
     sprStatus.textContent = text || '';
     sprStatus.className = 'hint' + (state === 'fehler' || state === 'tippen' ? ' warn' : state === 'aktiv' ? ' ok' : '');
@@ -698,7 +700,7 @@
   async function renderModellStatus() {
     const el = $('#modell-status');
     const da = await Sprache.isDownloaded();
-    el.textContent = da ? 'Sprachmodell gespeichert – funktioniert offline ✓' : 'Sprachmodell noch nicht heruntergeladen.';
+    el.innerHTML = da ? ic('check') + ' Sprachmodell gespeichert – funktioniert offline' : 'Sprachmodell noch nicht heruntergeladen.';
     el.className = 'hint' + (da ? ' ok' : ' warn');
     $('#btn-modell').hidden = da;
   }
@@ -800,7 +802,7 @@
   // MESSUNGEN
   // =====================================================================
   function updateCount() {
-    $('#count-badge').textContent = messungen.length ? `(${messungen.length})` : '';
+    $('#count-badge').textContent = messungen.length ? String(messungen.length) : '';
   }
 
   const pendingCount = () => messungen.filter((m) => !m.synced).length;
@@ -815,14 +817,14 @@
       return;
     }
     btnDel.hidden = false;
-    btnDel.textContent = prefs.dbUrl ? 'Übertragene Messungen vom Gerät entfernen' : 'Alle Messungen löschen';
+    btnDel.innerHTML = ic('trash-2') + (prefs.dbUrl ? 'Übertragene Messungen vom Gerät entfernen' : 'Alle Messungen löschen');
 
     const sorted = [...messungen].sort((a, b) => (b.datum + b.erfasst).localeCompare(a.datum + a.erfasst));
     ul.innerHTML = sorted.map((m) => {
       const name = m.fassungKuerzel ? `${m.fassungKuerzel} – ${m.fassungName}` : m.fassungName;
       const sync = !prefs.dbUrl ? '' : m.synced
-        ? '<span class="sync">☁︎ übertragen</span>'
-        : '<span class="sync pending">⏳ ausstehend</span>';
+        ? `<span class="sync">${ic('cloud-check')} übertragen</span>`
+        : `<span class="sync pending">${ic('cloud-upload')} ausstehend</span>`;
       const zeiten = m.zeiten.length > 1 ? ` (${m.zeiten.map((z) => z.toFixed(1)).join(' / ')})` : '';
       return `<li>
         <div class="main">
@@ -831,7 +833,7 @@
           <div class="meta">${m.volumen} l · ${m.zeiten.length}× · Ø ${fmtNum(m.zeit, 2)} s${zeiten} · ${fmtNum(m.schuettung, 3)} l/s</div>
           <div class="meta">${esc(m.typ)} · ${esc(m.zuordnung)}${m.bemerkung ? ' · ' + esc(m.bemerkung) : ''}</div>
         </div>
-        <button class="del" data-id="${esc(m.id)}" aria-label="Löschen">✕</button>
+        <button class="del" data-id="${esc(m.id)}" aria-label="Löschen">${ic('trash-2')}</button>
       </li>`;
     }).join('');
   }
@@ -971,11 +973,11 @@
     }
     ul.innerHTML = fassungen.map((f) => `<li>
         <div class="main" data-k="${esc(f.kuerzel)}">
-          <div class="title">${esc(siteLabel(f))}${fassQueue[lc(f.kuerzel)] && prefs.dbUrl ? ' <span class="sync pending">⏳</span>' : ''}</div>
+          <div class="title">${esc(siteLabel(f))}${fassQueue[lc(f.kuerzel)] && prefs.dbUrl ? ` <span class="sync pending" title="noch nicht übertragen">${ic('cloud-upload')}</span>` : ''}</div>
           <div class="meta">${esc([f.typ, f.projekt, `${anzahlFor(f)} Messungen${f.anzahl ? '' : ' (Standard)'}`].filter(Boolean).join(' · '))}</div>
           <div class="meta">${hasCoords(f) ? `${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}` : 'keine Koordinaten'}</div>
         </div>
-        <button class="del" data-k="${esc(f.kuerzel)}" aria-label="Löschen">✕</button>
+        <button class="del" data-k="${esc(f.kuerzel)}" aria-label="Löschen">${ic('trash-2')}</button>
       </li>`).join('');
   }
 
@@ -1183,7 +1185,7 @@
   async function sync(opts) {
     opts = opts || {};
     if (!prefs.dbUrl) {
-      if (!opts.silent) toast('Keine Datenbank eingerichtet (⚙)');
+      if (!opts.silent) toast('Keine Datenbank eingerichtet (siehe Einstellungen)');
       return false;
     }
     if (syncing) { syncAgain = true; return false; }
@@ -1246,19 +1248,19 @@
     const n = pendingCount();
     b.classList.remove('warn');
     if (!navigator.onLine) {
-      b.textContent = n ? `offline · ${n} ausstehend` : 'offline';
+      b.innerHTML = ic('cloud-off') + (n ? `offline · ${n}` : 'offline');
       b.hidden = false;
     } else if (!prefs.dbUrl) {
       b.hidden = true;
     } else if (syncing) {
-      b.textContent = 'synchronisiere …';
+      b.innerHTML = ic('refresh-cw', 'spin') + 'Sync …';
       b.hidden = false;
     } else if (n) {
-      b.textContent = `⏳ ${n} ausstehend`;
+      b.innerHTML = ic('cloud-upload') + `${n} ausstehend`;
       b.classList.add('warn');
       b.hidden = false;
     } else {
-      b.textContent = '☁︎ synchron';
+      b.innerHTML = ic('cloud-check') + 'synchron';
       b.hidden = false;
     }
   }
@@ -1270,7 +1272,7 @@
   function renderSyncInfo() {
     const el = $('#mess-sync');
     if (!prefs.dbUrl) {
-      el.textContent = 'Keine geteilte Datenbank eingerichtet (⚙). Daten nur auf diesem Gerät.';
+      el.textContent = 'Keine geteilte Datenbank eingerichtet (siehe Einstellungen). Daten nur auf diesem Gerät.';
       return;
     }
     const n = pendingCount();

@@ -137,5 +137,6 @@ Lokal testen: `bash tools/sprachmodell-laden.sh`, dann `python3 -m http.server` 
 
 Spracherkennung: [vosk-browser](https://github.com/ccoreilly/vosk-browser) und Modell
 [vosk-model-small-de](https://alphacephei.com/vosk/models), beide Apache-2.0-Lizenz.
+Icons: [Lucide](https://lucide.dev), ISC-Lizenz – direkt in `index.html` eingebettet (funktioniert offline).
 
 Nach Änderungen an den App-Dateien die Versionsnummer `CACHE` in `sw.js` erhöhen, damit die Geräte das Update laden.

@@ -28,6 +28,16 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+
+/* Icons (Lucide, eingebettet in index.html) */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ic {
+  width: 1.2em; height: 1.2em; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  vertical-align: -0.22em;
+}
+.ic.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 html, body { margin: 0; }
 body {
   font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -43,6 +53,7 @@ body {
 }
 .topbar h1 { font-size: 1.2rem; margin: 0; }
 .badge {
+  display: inline-flex; align-items: center; gap: 6px;
   background: rgba(0,0,0,.25); color: inherit; border: 0; border-radius: 99px;
   padding: 4px 12px; font: inherit; font-size: .8rem; cursor: pointer;
 }
@@ -53,12 +64,21 @@ body {
   display: flex; background: var(--card); border-bottom: 1px solid var(--line);
 }
 .tabs button {
-  flex: 1; padding: 12px 4px; border: 0; background: none; color: var(--muted);
-  font: inherit; font-weight: 600; border-bottom: 3px solid transparent;
+  flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 4px 6px; border: 0; background: none; color: var(--muted);
+  font: inherit; font-size: .78rem; font-weight: 600; border-bottom: 3px solid transparent;
 }
+.tabs button .ic { width: 22px; height: 22px; }
 .tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
-.tabs button.narrow { flex: 0 0 52px; font-size: 1.2rem; }
-.count { font-weight: 400; }
+.tabs button.narrow { flex: 0 0 56px; justify-content: center; }
+.tabs button.narrow .ic { width: 24px; height: 24px; }
+.count {
+  position: absolute; top: 3px; left: calc(50% + 6px);
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--primary); color: var(--primary-text);
+  font-size: .7rem; line-height: 18px; text-align: center;
+}
+.count:empty { display: none; }
 
 main { max-width: 640px; margin: 0 auto; padding: 12px 16px 32px; }
 .tab { display: none; }
@@ -95,13 +115,14 @@ input.invalid, select.invalid { border-color: var(--danger); }
 .row .grow2 { flex: 2; min-width: 0; }
 
 .btn {
-  display: inline-flex; align-items: center; justify-content: center;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 44px; padding: 0 16px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--card); color: var(--text);
   font: inherit; font-weight: 600; cursor: pointer;
 }
 .btn.small { min-height: 36px; padding: 0 12px; font-size: .9rem; }
 .btn.big { min-height: 56px; flex: 1; font-size: 1.1rem; }
+.btn.big .ic { width: 1.4em; height: 1.4em; }
 .btn.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
 .btn.danger { color: var(--danger); border-color: var(--danger); background: none; }
 .btn.block { width: 100%; margin-top: 4px; }
@@ -112,13 +133,15 @@ input.invalid, select.invalid { border-color: var(--danger); }
 a.btn { text-decoration: none; }
 
 .stepper { display: flex; align-items: center; gap: 4px; }
-.stepper .btn { width: 44px; min-height: 44px; padding: 0; font-size: 1.3rem; }
+.stepper .btn { width: 44px; min-height: 44px; padding: 0; }
+.stepper .btn .ic { width: 22px; height: 22px; }
 .stepper input { width: 56px; text-align: center; font-weight: 700; }
 
 .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label {
   flex: 1; margin: 0; padding: 11px 4px; text-align: center; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
   font-size: .95rem; color: var(--text); background: var(--bg);
   border-left: 1px solid var(--line);
 }
@@ -170,7 +193,7 @@ label.check input { width: 22px; height: 22px; min-height: 0; margin: 0; flex: n
   border-radius: 99px; padding: 4px 4px 4px 12px; font-variant-numeric: tabular-nums;
 }
 .zeiten li span { color: var(--muted); }
-.zeiten .x { border: 0; background: none; color: var(--danger); font-size: 1rem; padding: 2px 8px; cursor: pointer; }
+.zeiten .x { display: flex; border: 0; background: none; color: var(--danger); padding: 4px 8px; cursor: pointer; }
 .mittel { margin-top: 10px; font-weight: 600; }
 .mittel:empty { display: none; }
 .mittel small { display: block; font-weight: 400; color: var(--muted); }
@@ -185,7 +208,8 @@ label.check input { width: 22px; height: 22px; min-height: 0; margin: 0; flex: n
 .list .sync { font-weight: 400; font-size: .8rem; color: var(--muted); margin-left: 4px; }
 .list .sync.pending { color: var(--warn); }
 .list .meta { font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
-.list .del { border: 0; background: none; color: var(--danger); font-size: 1.2rem; padding: 4px 6px; cursor: pointer; }
+.list .del { display: flex; border: 0; background: none; color: var(--danger); padding: 8px; margin: -4px -4px 0 0; cursor: pointer; }
+.list .del .ic { width: 20px; height: 20px; }
 .list .empty { justify-content: center; color: var(--muted); }
 
 .toast {

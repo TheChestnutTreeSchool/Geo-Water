@@ -1,5 +1,5 @@
 /* Service Worker: macht die App offline verfügbar */
-const CACHE = 'geo-water-v3';
+const CACHE = 'geo-water-v4';
 const FILES = ['./', 'index.html', 'style.css', 'app.js', 'xlsx.js', 'sprache.js', 'manifest.webmanifest',
   'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 
