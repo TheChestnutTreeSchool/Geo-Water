@@ -11,7 +11,7 @@
  * Fassungen dürfen direkt in der Tabelle bearbeitet werden – die App übernimmt sie beim nächsten Abgleich.
  */
 
-const SCHLUESSEL = 'bitte-aendern';   // gleicher Zugangsschlüssel wie in der App
+const SCHLUESSEL = 'bitte-aendern';   // ÄNDERN: zufällig, mind. 12 Zeichen – gleicher Schlüssel wie in den Apps
 
 const BLATT_MESSUNGEN = 'Messungen';
 const BLATT_FASSUNGEN = 'Fassungen';
@@ -58,7 +58,11 @@ function antwort(fn) {
 }
 
 function pruefeSchluessel(key) {
-  if (SCHLUESSEL && key !== SCHLUESSEL) throw new Error('Falscher Zugangsschlüssel');
+  // Vorlage-Schlüssel oder zu kurz: nicht arbeiten – sonst könnte jeder mit der URL die Tabelle lesen und ändern
+  if (!SCHLUESSEL || SCHLUESSEL === 'bitte-aendern' || SCHLUESSEL.length < 12) {
+    throw new Error('Zugangsschlüssel im Apps Script ändern (mindestens 12 Zeichen)');
+  }
+  if (key !== SCHLUESSEL) throw new Error('Falscher Zugangsschlüssel');
 }
 
 // ---------- Blätter und Spalten ----------
@@ -115,6 +119,14 @@ function zuDatum(v) {
 function zellwert(k, v) {
   if (v === null || v === undefined) return '';
   if (DATUM_SPALTEN.indexOf(k) >= 0 && typeof v === 'string') return zuDatum(v);
+  return alsText(v);
+}
+
+// Schutz vor Formel-Injection: Text, der mit = + - @ beginnt, würde Google Tabellen als Formel ausführen.
+// Ein vorangestelltes Apostroph speichert ihn als reinen Text (Zahlen bleiben Zahlen).
+function alsText(v) {
+  if (typeof v !== 'string' || v === '') return v;
+  if ('=+-@\t\r'.indexOf(v.charAt(0)) >= 0 && isNaN(Number(v.trim()))) return "'" + v;
   return v;
 }
 
@@ -171,9 +183,9 @@ function aendereFassungen(ops) {
     }
 
     const neu = {
-      'Kürzel': k,
-      'Name': f.name || '',
-      'Projekt': f.projekt || '',
+      'Kürzel': alsText(k),
+      'Name': alsText(f.name || ''),
+      'Projekt': alsText(f.projekt || ''),
       'Breite': typeof f.lat === 'number' ? Math.round(f.lat * 1e6) / 1e6 : '',
       'Länge': typeof f.lon === 'number' ? Math.round(f.lon * 1e6) / 1e6 : '',
       'Anzahl Messungen': f.anzahl || '',
