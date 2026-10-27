@@ -15,7 +15,7 @@ const SCHLUESSEL = 'bitte-aendern';   // ÄNDERN: zufällig, mind. 12 Zeichen �
 
 const BLATT_MESSUNGEN = 'Messungen';
 const BLATT_FASSUNGEN = 'Fassungen';
-const FASSUNG_SPALTEN = ['Kürzel', 'Name', 'Projekt', 'Breite', 'Länge', 'Anzahl Messungen', 'Geändert am'];
+const FASSUNG_SPALTEN = ['Kürzel', 'Name', 'Projekt', 'Breite', 'Länge', 'Anzahl Messungen', 'Herkunft', 'Bemerkung', 'Geändert am'];
 const DATUM_SPALTEN = ['Probe genommen am', 'Erfasst am', 'Geändert am'];
 const DATUM_FORMAT = 'dd.mm.yyyy hh:mm';
 
@@ -189,8 +189,13 @@ function aendereFassungen(ops) {
       'Breite': typeof f.lat === 'number' ? Math.round(f.lat * 1e6) / 1e6 : '',
       'Länge': typeof f.lon === 'number' ? Math.round(f.lon * 1e6) / 1e6 : '',
       'Anzahl Messungen': f.anzahl || '',
+      'Herkunft': alsText(f.herkunft || ''),
+      'Bemerkung': alsText(f.bemerkung || ''),
       'Geändert am': new Date()
     };
+    // Apps ohne diese Angaben (z. B. ältere Versionen) überschreiben Herkunft/Bemerkung nicht
+    if (f.herkunft === undefined) delete neu['Herkunft'];
+    if (f.bemerkung === undefined) delete neu['Bemerkung'];
     if (zeile > 0) {
       // zusätzliche, von Hand angelegte Spalten unverändert lassen
       const alt = sh.getRange(zeile, 1, 1, kopf.length).getValues()[0];
